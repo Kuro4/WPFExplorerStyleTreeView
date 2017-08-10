@@ -11,9 +11,8 @@ namespace WPFExplorerStyleTreeView
 {
     /// <summary>
     /// ルートディレクトリ用クラス
-    /// _RootDirectoryに追加したNodeがルートになる
-    /// コンストラクタでは1つのルートだけ追加する
-    /// ルートが複数になる場合はインスタンス化後にAdd()で追加する
+    /// <para>_RootDirectoryに追加したNodeがルートになる</para>
+    /// <para>コンストラクタでは1つのルートだけ追加するか、コレクションで複数のルートを追加できる</para>
     /// </summary>
     public class RootDirectoryNode
     {
@@ -23,10 +22,107 @@ namespace WPFExplorerStyleTreeView
         /// </summary>
         public List<BaseNode> _RootDirectory { get; private set; } = new List<BaseNode>();
 
+        /// <summary>
+        /// 1つのルートノードを持たせるコンストラクタ
+        /// </summary>
+        /// <param name="rootDirectoryPath"></param>
+        /// <param name="helper"></param>
+        public RootDirectoryNode(string rootDirectoryPath, TreeViewHelper helper)
+        {
+            _RootDirectory.Add(new DirectoryNode(new DirectoryInfo(rootDirectoryPath), helper));
+        }
+
+        /// <summary>
+        /// 1つのルートノードを持たせるコンストラクタ
+        /// </summary>
+        /// <param name="rootDirectoryPath"></param>
+        /// <param name="helper"></param>
         public RootDirectoryNode(DirectoryInfo rootDirectory, TreeViewHelper helper)
         {
             _RootDirectory.Add(new DirectoryNode(rootDirectory, helper));
         }
+
+        /// <summary>
+        /// 複数のルートノードを持たせるコンストラクタ
+        /// </summary>
+        /// <param name="rootDirectoryPathList"></param>
+        /// <param name="helper"></param>
+        public RootDirectoryNode(IList<string> rootDirectoryPathList, TreeViewHelper helper)
+        {
+            foreach(var rootDirectoryPath in rootDirectoryPathList)
+            {
+                _RootDirectory.Add(new DirectoryNode(new DirectoryInfo(rootDirectoryPath), helper));
+            }
+        }
+
+        /// <summary>
+        /// 複数のルートノードを持たせるコンストラクタ
+        /// </summary>
+        /// <param name="rootDirectoryPathList"></param>
+        /// <param name="helper"></param>
+        public RootDirectoryNode(IList<DirectoryInfo> rootDirectoryList, TreeViewHelper helper)
+        {
+            foreach (var rootDirectory in rootDirectoryList)
+            {
+                _RootDirectory.Add(new DirectoryNode(rootDirectory, helper));
+            }
+        }
+
+        /// <summary>
+        /// 1つのルートノードを再度セットする
+        /// </summary>
+        /// <param name="rootDirectoryPath"></param>
+        /// <param name="helper"></param>
+        public void SetRootDirectory(string rootDirectoryPath, TreeViewHelper helper)
+        {
+            CommonSetRootDirectory(new DirectoryNode(new DirectoryInfo(rootDirectoryPath), helper));
+        }
+
+        /// <summary>
+        /// 1つのルートノードを再度セットする
+        /// </summary>
+        /// <param name="rootDirectory"></param>
+        /// <param name="helper"></param>
+        public void SetRootDirectory(DirectoryInfo rootDirectory,TreeViewHelper helper)
+        {
+            CommonSetRootDirectory(new DirectoryNode(rootDirectory, helper));
+        }
+
+        /// <summary>
+        /// 複数のルートノードを再度セットする
+        /// </summary>
+        /// <param name="rootDirectoryPathList"></param>
+        /// <param name="helper"></param>
+        public void SetRootDirectories(IList<string> rootDirectoryPathList, TreeViewHelper helper)
+        {
+            CommonSetRootDirectories(rootDirectoryPathList.Select(x => new DirectoryNode(new DirectoryInfo(x), helper)).ToList());
+        }
+
+        /// <summary>
+        /// 複数のルートノードを再度セットする
+        /// </summary>
+        /// <param name="rootDirectoryPathList"></param>
+        /// <param name="helper"></param>
+        public void SetRootDirectories(IList<DirectoryInfo> rootDirectoryList, TreeViewHelper helper)
+        {
+            CommonSetRootDirectories(rootDirectoryList.Select(x => new DirectoryNode(x, helper)).ToList());
+        }
+
+        private void CommonSetRootDirectory(DirectoryNode dirNode)
+        {
+            _RootDirectory.Clear();
+            _RootDirectory.Add(dirNode);
+        }
+
+        private void CommonSetRootDirectories(IList<DirectoryNode> dirNodes)
+        {
+            _RootDirectory.Clear();
+            foreach(var dirNode in dirNodes)
+            {
+                _RootDirectory.Add(dirNode);
+            }
+        }
+
     }
 
     /// <summary>
