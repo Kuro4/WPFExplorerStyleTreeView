@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
@@ -20,20 +21,20 @@ namespace WPFExplorerStyleTreeView
         /// ルートNodeのリスト
         /// こいつをバインドする
         /// </summary>
-        public List<BaseNode> _RootDirectory { get; private set; } = new List<BaseNode>();
+        public ObservableCollection<BaseNode> _RootDirectory { get; private set; } = new ObservableCollection<BaseNode>();
 
         /// <summary>
-        /// 1つのルートノードを持たせるコンストラクタ
+        /// 1つのルートノードを持たせるコンストラクタ(string)
         /// </summary>
         /// <param name="rootDirectoryPath"></param>
         /// <param name="helper"></param>
         public RootDirectoryNode(string rootDirectoryPath, TreeViewHelper helper)
         {
-            _RootDirectory.Add(new DirectoryNode(new DirectoryInfo(rootDirectoryPath), helper));
+            _RootDirectory.Add(TryCreateDirectoryNode(rootDirectoryPath, helper));
         }
 
         /// <summary>
-        /// 1つのルートノードを持たせるコンストラクタ
+        /// 1つのルートノードを持たせるコンストラクタ(DirectoryInfo)
         /// </summary>
         /// <param name="rootDirectoryPath"></param>
         /// <param name="helper"></param>
@@ -43,43 +44,37 @@ namespace WPFExplorerStyleTreeView
         }
 
         /// <summary>
-        /// 複数のルートノードを持たせるコンストラクタ
+        /// 複数のルートノードを持たせるコンストラクタ(string)
         /// </summary>
         /// <param name="rootDirectoryPathList"></param>
         /// <param name="helper"></param>
-        public RootDirectoryNode(IList<string> rootDirectoryPathList, TreeViewHelper helper)
+        public RootDirectoryNode(IEnumerable<string> rootDirectoryPathList, TreeViewHelper helper)
         {
-            foreach(var rootDirectoryPath in rootDirectoryPathList)
-            {
-                _RootDirectory.Add(new DirectoryNode(new DirectoryInfo(rootDirectoryPath), helper));
-            }
+            CommonSetRootDirectories(rootDirectoryPathList.Select(x => TryCreateDirectoryNode(x, helper)).ToList());
         }
 
         /// <summary>
-        /// 複数のルートノードを持たせるコンストラクタ
+        /// 複数のルートノードを持たせるコンストラクタ(DirectoryInfo)
         /// </summary>
         /// <param name="rootDirectoryPathList"></param>
         /// <param name="helper"></param>
-        public RootDirectoryNode(IList<DirectoryInfo> rootDirectoryList, TreeViewHelper helper)
+        public RootDirectoryNode(IEnumerable<DirectoryInfo> rootDirectoryList, TreeViewHelper helper)
         {
-            foreach (var rootDirectory in rootDirectoryList)
-            {
-                _RootDirectory.Add(new DirectoryNode(rootDirectory, helper));
-            }
+            CommonSetRootDirectories(rootDirectoryList.Select(x => new DirectoryNode(x,helper)).ToList());
         }
 
         /// <summary>
-        /// 1つのルートノードを再度セットする
+        /// 1つのルートノードを再度セットする(string)
         /// </summary>
         /// <param name="rootDirectoryPath"></param>
         /// <param name="helper"></param>
         public void SetRootDirectory(string rootDirectoryPath, TreeViewHelper helper)
         {
-            CommonSetRootDirectory(new DirectoryNode(new DirectoryInfo(rootDirectoryPath), helper));
+            CommonSetRootDirectory(TryCreateDirectoryNode(rootDirectoryPath, helper));
         }
 
         /// <summary>
-        /// 1つのルートノードを再度セットする
+        /// 1つのルートノードを再度セットする(DirectoryInfo)
         /// </summary>
         /// <param name="rootDirectory"></param>
         /// <param name="helper"></param>
@@ -89,40 +84,125 @@ namespace WPFExplorerStyleTreeView
         }
 
         /// <summary>
-        /// 複数のルートノードを再度セットする
+        /// 複数のルートノードを再度セットする(string)
         /// </summary>
-        /// <param name="rootDirectoryPathList"></param>
+        /// <param name="rootDirectoryPaths"></param>
         /// <param name="helper"></param>
-        public void SetRootDirectories(IList<string> rootDirectoryPathList, TreeViewHelper helper)
+        public void SetRootDirectories(IEnumerable<string> rootDirectoryPaths, TreeViewHelper helper)
         {
-            CommonSetRootDirectories(rootDirectoryPathList.Select(x => new DirectoryNode(new DirectoryInfo(x), helper)).ToList());
+            CommonSetRootDirectories(rootDirectoryPaths.Where(x => new DirectoryInfo(x).Exists).Select(x => new DirectoryNode(new DirectoryInfo(x), helper)).ToList());
         }
 
         /// <summary>
-        /// 複数のルートノードを再度セットする
+        /// 複数のルートノードを再度セットする(DirectoryInfo)
         /// </summary>
         /// <param name="rootDirectoryPathList"></param>
         /// <param name="helper"></param>
-        public void SetRootDirectories(IList<DirectoryInfo> rootDirectoryList, TreeViewHelper helper)
+        public void SetRootDirectories(IEnumerable<DirectoryInfo> rootDirectories, TreeViewHelper helper)
         {
-            CommonSetRootDirectories(rootDirectoryList.Select(x => new DirectoryNode(x, helper)).ToList());
+            CommonSetRootDirectories(rootDirectories.Select(x => new DirectoryNode(x, helper)).ToList());
         }
 
-        private void CommonSetRootDirectory(DirectoryNode dirNode)
+        /// <summary>
+        /// ルートノードに指定パスのDirectoryNodeを追加する
+        /// </summary>
+        /// <param name="rootDirectoryPath"></param>
+        /// <param name="helper"></param>
+        public void AddRootDirectory(string rootDirectoryPath,TreeViewHelper helper)
+        {
+            _RootDirectory.Add(TryCreateDirectoryNode(rootDirectoryPath, helper));
+        }
+
+        /// <summary>
+        /// ルートノードに指定ディレクトリのDirectoryNodeを追加する
+        /// </summary>
+        /// <param name="rootDirectoryPath"></param>
+        /// <param name="helper"></param>
+        public void AddRootDirectory(DirectoryInfo rootDirectoryPath, TreeViewHelper helper)
+        {
+            _RootDirectory.Add(new DirectoryNode(rootDirectoryPath, helper));
+        }
+
+        /// <summary>
+        /// ルートノードに指定パスのFileNodeを追加する
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="helper"></param>
+        public void AddFileNode(string filePath,TreeViewHelper helper)
+        {
+            _RootDirectory.Add(TryCreateFileNode(filePath, helper));
+        }
+
+        /// <summary>
+        /// ルートノードに指定ファイルのFileNodeを追加する
+        /// </summary>
+        /// <param name="file"></param>
+        /// <param name="helper"></param>
+        public void AddFileNode(FileInfo file,TreeViewHelper helper)
+        {
+            _RootDirectory.Add(new FileNode(file, helper));
+        }
+
+        /// <summary>
+        /// ルートノードを一旦クリアし、引数のノードを追加する
+        /// </summary>
+        /// <param name="dirNode"></param>
+        private void CommonSetRootDirectory(BaseNode dirNode)
         {
             _RootDirectory.Clear();
             _RootDirectory.Add(dirNode);
         }
 
-        private void CommonSetRootDirectories(IList<DirectoryNode> dirNodes)
+        /// <summary>
+        /// ルートノードを一旦クリアし、引数のノード全てを追加する
+        /// </summary>
+        /// <param name="dirNodes"></param>
+        private void CommonSetRootDirectories(IEnumerable<BaseNode> dirNodes)
         {
             _RootDirectory.Clear();
-            foreach(var dirNode in dirNodes)
+            foreach (var dirNode in dirNodes)
             {
                 _RootDirectory.Add(dirNode);
             }
         }
 
+        /// <summary>
+        /// 指定パスにディレクトリが存在するならDirectoryNodeを返す
+        /// <para>存在しなければBaseNodeを返す</para>
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="helper"></param>
+        /// <returns></returns>
+        private BaseNode TryCreateDirectoryNode(string path, TreeViewHelper helper)
+        {
+            if (Directory.Exists(path))
+            {
+                return new DirectoryNode(new DirectoryInfo(path), helper);
+            }
+            else
+            {
+                return new BaseNode() { Header = "フォルダが見つかりません" };
+            }
+        }
+
+        /// <summary>
+        /// 指定パスにファイルが存在するならDirectoryNodeを返す
+        /// <para>存在しなければBaseNodeを返す</para>
+        /// </summary>
+        /// <param name="path"></param>
+        /// <param name="helper"></param>
+        /// <returns></returns>
+        private BaseNode TryCreateFileNode(string path, TreeViewHelper helper)
+        {
+            if (File.Exists(path))
+            {
+                return new FileNode(new FileInfo(path), helper);
+            }
+            else
+            {
+                return new BaseNode() { Header = "フォルダが見つかりません" };
+            }
+        }
     }
 
     /// <summary>
@@ -192,6 +272,10 @@ namespace WPFExplorerStyleTreeView
             _HeaderPanel.Children.Add(_HeaderImage);
             _HeaderPanel.Children.Add(_HeaderText);
             this.Header = _HeaderPanel;
+
+            //これを設定しとかないとバインドエラーが出る
+            this.HorizontalContentAlignment = HorizontalAlignment.Left;
+            this.VerticalContentAlignment = VerticalAlignment.Center;
         }
     }
 
