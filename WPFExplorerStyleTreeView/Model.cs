@@ -90,7 +90,7 @@ namespace WPFExplorerStyleTreeView
         /// <param name="helper"></param>
         public void SetRootDirectories(IEnumerable<string> rootDirectoryPaths, TreeViewHelper helper)
         {
-            CommonSetRootDirectories(rootDirectoryPaths.Where(x => new DirectoryInfo(x).Exists).Select(x => new DirectoryNode(new DirectoryInfo(x), helper)).ToList());
+            CommonSetRootDirectories(rootDirectoryPaths.Select(x => TryCreateDirectoryNode(x, helper)).ToList());
         }
 
         /// <summary>
